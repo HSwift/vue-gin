@@ -5,9 +5,9 @@ import (
 	"log"
 	"net/http"
 
-	"golang.org/x/crypto/bcrypt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var db *sql.DB
@@ -44,10 +44,11 @@ func setupRouter() *gin.Engine {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "用户名或密码错误"})
 		} else {
-			if formPassword == password {
-				c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "登录成功"})
-			} else {
+			err = bcrypt.CompareHashAndPassword([]byte(password), []byte(formPassword))
+			if err != nil {
 				c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "用户名或密码错误"})
+			} else {
+				c.JSON(http.StatusOK, gin.H{"code": 0, "msg": "登录成功"})
 			}
 		}
 	})
@@ -63,7 +64,12 @@ func setupRouter() *gin.Engine {
 			if count > 0 {
 				c.JSON(http.StatusOK, gin.H{"code": -1, "msg": "用户已存在"})
 			} else {
-				_, err := db.Exec("INSERT INTO users VALUES (?,?)", username, formPassword)
+				hashPassword, err := bcrypt.GenerateFromPassword([]byte(formPassword), bcrypt.MinCost)
+				if err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{"code": -2, "msg": "密码生成错误"})
+					return
+				}
+				_, err = db.Exec("INSERT INTO users VALUES (NULL,?,?)", username, string(hashPassword))
 				if err != nil {
 					c.JSON(http.StatusInternalServerError, gin.H{"code": -2, "msg": "数据库错误"})
 				} else {
