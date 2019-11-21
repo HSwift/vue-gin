@@ -118,7 +118,7 @@ func setupRouter() *gin.Engine {
 
 func main() {
 
-	db, err = sql.Open("mysql", "root:your_password@tcp(127.0.0.1:3306)/users?charset=utf8")
+	db, err = sql.Open("mysql", "test:test1234@tcp(db:3306)/users?charset=utf8")
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -132,5 +132,5 @@ func main() {
 	}
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:8080
-	r.Run(":8090")
+	r.Run(":8080")
 }
